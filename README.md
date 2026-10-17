@@ -1,228 +1,204 @@
+# CI/CD Pipeline Setup with Git, Jenkins, Docker, and Kubernetes
+
+## 1. Overview
+
+This project demonstrates a Continuous Integration and Continuous Deployment (CI/CD) pipeline using Git, GitHub, Jenkins, Docker, and Kubernetes.
+
+Jenkins checks out the source code from GitHub, validates the required project files, builds a Docker image, verifies Kubernetes access, deploys the application, and checks the deployment rollout.
+
+## 2. Architecture
+
+```text
+Developer
+    |
+    v
+  GitHub
+    |
+    v
+  Jenkins
+    |
+    v
+Validate Project Files
+    |
+    v
+Build Docker Image
+    |
+    v
+Verify Kubernetes Access
+    |
+    v
+Deploy to Kubernetes
+    |
+    v
+Kubernetes Service
+    |
+    v
+Application Endpoint
+```
+
+## 3. Technologies Used
+
+- **Version Control:** Git and GitHub
+- **CI/CD:** Jenkins
+- **Containerization:** Docker
+- **Container Orchestration:** Kubernetes
+- **Application:** Python HTTP server
+- **Cluster Management:** kubectl
+- **Local Environment:** Windows and Docker Desktop
+
+## 4. Prerequisites
+
+Install and configure the following tools:
+
+- Git
+- Jenkins
+- Java compatible with the installed Jenkins version
+- Docker Desktop
+- Kubernetes enabled in Docker Desktop
+- kubectl
+
+Ensure Jenkins can access Docker and the configured Kubernetes cluster.
+
+## 5. Project Structure
+
+```text
+CICD-Pipeline/
+├── app/
+│   └── app.py
+├── k8s/
+│   ├── deployment.yaml
+│   └── service.yaml
+├── Dockerfile
+├── Jenkinsfile
+└── README.md
+```
+
+## 6. Jenkins Configuration
+
+1. Create a Jenkins Pipeline job named `CICD-Pipeline`.
+2. Select **Pipeline script from SCM**.
+3. Select **Git** as the source control management system.
+4. Enter the GitHub repository URL.
+5. Set the branch to `*/main`.
+6. Set the Script Path to `Jenkinsfile`.
+7. Configure Git credentials if the repository is private.
+8. Ensure the Jenkins service account has the required Docker and Kubernetes access.
+
+## 7. Automatic Builds Using Poll SCM
+
+To check the GitHub repository for changes periodically:
+
+1. Open the `CICD-Pipeline` job in Jenkins.
+2. Select **Configure**.
+3. Under **Build Triggers**, enable **Poll SCM**.
+4. Enter the following schedule:
+
+   ```text
+   H/5 * * * *
+   ```
+
+5. Save the configuration.
+
+Jenkins checks the repository periodically and starts a build when it detects relevant source changes. Polling does not necessarily start a build every five minutes if there are no changes.
 
+A GitHub webhook is another option when Jenkins is reachable by GitHub.
 
-\# CI/CD Pipeline Setup with Git, Jenkins, Docker, and Kubernetes
-
-
-
-\## 1. Overview
-
-
-
-This project demonstrates a CI/CD pipeline using GitHub, Jenkins, Docker, and Kubernetes. Jenkins checks out the source code, validates the required files, builds a Docker image, verifies Kubernetes access, deploys the application, and checks the deployment rollout.
-
-
-
-\## 2. Architecture
-
-
-
-Developer -> GitHub -> Jenkins -> Docker Image Build -> Kubernetes Deployment -> Kubernetes Service
-
-
-
-\## 3. Prerequisites
-
-
-
-\- Git
-
-\- Jenkins
-
-\- Docker Desktop with Kubernetes enabled
-
-\- kubectl
-
-\- Java compatible with the installed Jenkins version
-
-
-
-\## 4. Project Structure
-
-
-
-&#x20;   app/
-
-&#x20;     app.py
-
-&#x20;   k8s/
-
-&#x20;     deployment.yaml
-
-&#x20;     service.yaml
-
-&#x20;   Dockerfile
-
-&#x20;   Jenkinsfile
-
-&#x20;   README.md
-
-
-
-\## 5. Jenkins Configuration
-
-
-
-1\. Create a Jenkins Pipeline job named `CICD-Pipeline`.
-
-2\. Select Pipeline script from SCM.
-
-3\. Select Git as the SCM.
-
-4\. Set the repository URL to the project's GitHub repository.
-
-5\. Set the branch to `\*/main`.
-
-6\. Set Script Path to `Jenkinsfile`.
-
-7\. Configure Git credentials if the repository is private.
-
-8\. Ensure the Jenkins service account can access Docker and the configured Kubernetes context.
-
-
-
-\## 6. Automatic Builds
-
-
-
-For this local Jenkins setup, enable polling:
-
-
-
-1\. Open the Jenkins job and select Configure.
-
-2\. Under Build Triggers, enable Poll SCM.
-
-3\. Set the schedule to `H/5 \* \* \* \*`.
-
-4\. Save the configuration.
-
-
-
-Jenkins will check the configured Git repository periodically and start a build when it detects a change. A GitHub webhook can provide faster triggering when Jenkins is reachable by GitHub.
-
-
-
-\## 7. Kubernetes Configuration
-
-
+## 8. Kubernetes Configuration
 
 The pipeline uses the Kubernetes context configured in the Jenkins kubeconfig.
 
+**Default Kubernetes context:**
 
+```text
+docker-desktop
+```
 
-Default context: `docker-desktop`
+**Kubeconfig path:**
 
+```text
+C:\ProgramData\Jenkins\.jenkins\.kube\config
+```
 
+The `KUBE_CONTEXT` build parameter can select another Kubernetes context that is already configured and accessible to Jenkins.
 
-Default kubeconfig path:
+Do not commit kubeconfig files, access tokens, certificates, passwords, or other secrets to GitHub.
 
+## 9. Running the Pipeline
 
+1. Push the project files to the configured GitHub repository.
+2. Open the `CICD-Pipeline` job in Jenkins.
+3. Select **Build Now**, or wait for SCM polling to detect a change.
+4. Open the build's **Console Output**.
+5. Verify that the pipeline stages complete successfully.
 
-&#x20;   C:\\ProgramData\\Jenkins\\.jenkins\\.kube\\config
+The current pipeline builds and deploys the Docker image:
 
+```text
+cicd-app:1.0
+```
 
+## 10. Verifying the Deployment
 
-Change the `KUBE\_CONTEXT` build parameter to use another context available to the Jenkins service.
+Run the following commands in a terminal configured to access the target Kubernetes cluster:
 
+```bash
+kubectl get deployment cicd-app
+kubectl get pods
+kubectl get service cicd-app-service
+kubectl rollout status deployment/cicd-app
+```
 
+Open the application endpoint:
 
-Do not commit kubeconfig files, tokens, certificates, or passwords to Git.
-
-
-
-\## 8. Run the Pipeline
-
-
-
-1\. Push the project files to the configured GitHub repository.
-
-2\. Open the `CICD-Pipeline` job in Jenkins.
-
-3\. Select Build Now, or wait for SCM polling.
-
-4\. Review Console Output.
-
-5\. Confirm the build and deployment stages succeed.
-
-
-
-The default Docker image is `cicd-app:1.0`. The pipeline also accepts `DOCKER\_IMAGE` and `KUBE\_CONTEXT` build parameters.
-
-
-
-\## 9. Verify the Deployment
-
-
-
-Run these commands from a terminal with access to the target cluster:
-
-
-
-&#x20;   kubectl get deployment cicd-app
-
-&#x20;   kubectl get pods
-
-&#x20;   kubectl get service cicd-app-service
-
-&#x20;   kubectl rollout status deployment/cicd-app
-
-
-
-Open the application:
-
-
-
-&#x20;   http://localhost:30080
-
-
+[http://localhost:30080](http://localhost:30080)
 
 Expected response:
 
+```json
+{
+  "message": "Hello! CI/CD pipeline is working.",
+  "status": "success"
+}
+```
 
+## 11. Screenshots
 
-&#x20;   {"message": "Hello! CI/CD pipeline is working.", "status": "success"}
+The following screenshots demonstrate the successful pipeline execution and application response.
 
+### Jenkins Pipeline Success
 
+![Jenkins Pipeline Success](screenshots/jenkins-success.png)
 
-\## 10. Troubleshooting
+*The Jenkins build showing successful pipeline execution.*
 
+### Application Response
 
+![Application Response](screenshots/application-response.png)
 
-\- Docker build fails: Check that Docker Desktop is running and Jenkins can execute `docker`.
+*The application returning the expected JSON response.*
 
-\- Kubernetes access fails: Confirm the kubeconfig path, permissions, and context.
+## 12. Troubleshooting
 
-\- Rollout fails: Inspect `kubectl describe deployment cicd-app` and `kubectl logs deployment/cicd-app`.
+- **Docker build fails:** Verify that Docker Desktop is running and Jenkins can execute Docker commands.
+- **Kubernetes access fails:** Check the kubeconfig path, file permissions, and Kubernetes context.
+- **Deployment rollout fails:** Run `kubectl describe deployment cicd-app` and inspect the application logs.
+- **Application is unreachable:** Check Pod status, Service configuration, endpoints, and port `30080`.
+- **Automatic build does not start:** Verify the Git repository URL, branch, and Poll SCM configuration.
 
-\- Application is unreachable: Check Pod readiness, Service endpoints, and port 30080.
+## 13. Security and Reliability
 
-\- A build does not trigger automatically: Verify the repository URL, branch, and Poll SCM configuration.
+- Keep credentials and kubeconfig files outside source control.
+- Use Jenkins credentials for private repositories.
+- Grant Jenkins only the permissions required for its tasks.
+- Use readiness and liveness probes to monitor application health.
+- Define appropriate Kubernetes CPU and memory requests and limits.
+- Review Jenkins console output when a pipeline fails.
+- For production deployments, publish versioned images to a container registry and configure appropriate Kubernetes RBAC.
 
+## 14. Scope and Limitations
 
+This project is a local demonstration using Docker Desktop Kubernetes and a locally built Docker image.
 
-\## 11. Security and Reliability
+The Kubernetes Deployment uses `imagePullPolicy: Never`, which assumes the image is available in the cluster's local image store.
 
-
-
-\- Keep credentials and kubeconfig files outside source control.
-
-\- Use Jenkins credentials for private repositories.
-
-\- Grant the Jenkins identity only the permissions it needs.
-
-\- Use readiness and liveness probes and Kubernetes resource limits.
-
-\- Review build logs and failed-stage output.
-
-\- For production, publish versioned images to a container registry and use restricted Kubernetes RBAC rather than relying on a local Docker Desktop cluster.
-
-
-
-\## 12. Scope and Limitations
-
-
-
-This is a local demonstration using Docker Desktop Kubernetes and a locally built image. `imagePullPolicy: Never` assumes the image is available in the cluster's local image store. For a remote cluster, publish the image to a registry the cluster can access and configure authentication securely.
-
-
-
+For a remote Kubernetes cluster, publish the image to a container registry accessible to that cluster and configure registry authentication securely.
