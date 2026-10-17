@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'devops-cicd-app'
+        DOCKER_IMAGE = 'cicd-app:1.0'
     }
 
     stages {
@@ -18,7 +18,6 @@ pipeline {
             steps {
                 echo 'Building the application'
                 bat 'dir'
-                bat 'python --version'
             }
         }
 
