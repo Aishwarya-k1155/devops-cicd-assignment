@@ -1,9 +1,11 @@
 
+
 pipeline {
     agent any
 
     environment {
         DOCKER_IMAGE = 'cicd-app:1.0'
+        KUBECONFIG = 'C:\\ProgramData\\Jenkins\\.jenkins\\.kube\\config'
     }
 
     stages {
@@ -31,8 +33,8 @@ pipeline {
         stage('Verify Kubernetes') {
             steps {
                 echo 'Checking Kubernetes connectivity'
-                bat 'kubectl config current-context'
-                bat 'kubectl cluster-info'
+                bat 'kubectl --kubeconfig="%KUBECONFIG%" config current-context'
+                bat 'kubectl --kubeconfig="%KUBECONFIG%" cluster-info'
             }
         }
     }
