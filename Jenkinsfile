@@ -46,14 +46,26 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                script {
+                    if (!params.DOCKER_IMAGE?.trim()) {
+                        error('DOCKER_IMAGE is empty. Set it to cicd-app:1.0.')
+                    }
+                }
+
                 echo 'Building the Docker image.'
-                bat 'docker build -t "%DOCKER_IMAGE%" .'
-                bat 'docker image inspect "%DOCKER_IMAGE%"'
+                bat 'docker build -t "cicd-app:1.0" .'
+                bat 'docker image inspect "cicd-app:1.0"'
             }
         }
 
         stage('Verify Kubernetes Access') {
             steps {
+                script {
+                    if (!params.KUBE_CONTEXT?.trim()) {
+                        error('KUBE_CONTEXT is empty. Set it to docker-desktop.')
+                    }
+                }
+
                 echo 'Verifying access to the selected Kubernetes context.'
                 bat 'kubectl --kubeconfig="%KUBECONFIG%" --context="%KUBE_CONTEXT%" cluster-info'
             }
@@ -66,7 +78,7 @@ pipeline {
                 bat 'kubectl --kubeconfig="%KUBECONFIG%" --context="%KUBE_CONTEXT%" apply -f k8s\\service.yaml'
 
                 echo 'Setting the image built by this pipeline.'
-                bat 'kubectl --kubeconfig="%KUBECONFIG%" --context="%KUBE_CONTEXT%" set image deployment/cicd-app cicd-app="%DOCKER_IMAGE%"'
+                bat 'kubectl --kubeconfig="%KUBECONFIG%" --context="%KUBE_CONTEXT%" set image deployment/cicd-app cicd-app=cicd-app:1.0'
 
                 echo 'Restarting the Deployment to use the newly built local image.'
                 bat 'kubectl --kubeconfig="%KUBECONFIG%" --context="%KUBE_CONTEXT%" rollout restart deployment/cicd-app'
