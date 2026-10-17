@@ -3,6 +3,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cicd-app
+  labels:
+    app: cicd-app
 spec:
   replicas: 1
   selector:
@@ -18,4 +20,22 @@ spec:
           image: cicd-app:1.0
           imagePullPolicy: Never
           ports:
-            - containerPort: 5000
+            - name: http
+              containerPort: 5000
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
